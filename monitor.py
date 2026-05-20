@@ -111,8 +111,8 @@ def login(email: str, password: str) -> tuple[bool, int, str]:
     except ValueError as exc:
         return False, get_resp.status_code, str(exc)
 
-    # Shopware 6 uses plain "email" and "password" field names.
-    form_fields["email"] = email
+    # Shopware 6 uses "username" (accepts email address) and "password".
+    form_fields["username"] = email
     form_fields["password"] = password
 
     # Shopware 6 redirects to the B2B dashboard after a successful B2B login.
