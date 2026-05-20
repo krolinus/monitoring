@@ -14,7 +14,8 @@ jobs:
     timeout-minutes: 5
 
     permissions:
-      issues: write   # needed to create GitHub Issues on failure
+      contents: read   # needed for actions/checkout
+      issues: write    # needed to create GitHub Issues on failure
 
     steps:
       - name: Checkout repository
