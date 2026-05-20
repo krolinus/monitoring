@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-05-20T12:29:49Z",
+    "run_id": "26162568728",
+    "results": [
+      {
+        "name": "CHARISMA",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
+        "timestamp": "2026-05-20T12:29:40Z"
+      },
+      {
+        "name": "FRISCH+FROST",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
+        "timestamp": "2026-05-20T12:29:45Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-05-20T12:05:09Z",
     "run_id": "26161347799",
     "results": [
