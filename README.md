@@ -1,7 +1,14 @@
 # Shop Login Monitor
 
-Automatisches Monitoring des Shop-Logins via GitHub Actions.  
-Das Script meldet sich alle 15 Minuten bei `https://www.vierlande-food.de/account/login` an und protokolliert das Ergebnis. Bei einem Fehler wird automatisch ein GitHub Issue erstellt; sobald der Login wieder funktioniert, wird das Issue geschlossen.
+Automatisches Monitoring von Shop-Logins via GitHub Actions.  
+Alle 15 Minuten werden beide Shops geprüft. Bei einem Fehler wird automatisch ein GitHub Issue erstellt; sobald der Login wieder funktioniert, wird das Issue geschlossen.
+
+## Überwachte Shops
+
+| Name | URL | Erfolgs-Ziel |
+|---|---|---|
+| CHARISMA | vierlande-food.de/account/login | /b2bsalesrepresentative |
+| FRISCH+FROST | frisch-frost.de/account/login | beliebige Weiterleitung |
 
 ---
 
@@ -10,84 +17,77 @@ Das Script meldet sich alle 15 Minuten bei `https://www.vierlande-food.de/accoun
 ### 1. Repository anlegen
 
 ```bash
-git clone https://github.com/<dein-username>/monitoring.git
+git clone https://github.com/MusliMusli/monitoring.git
 cd monitoring
 ```
 
-Oder erstelle ein neues Repository direkt auf GitHub und lade diesen Code hoch.
-
 ### 2. Secrets hinterlegen
-
-Öffne dein Repository auf GitHub und navigiere zu:
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-Lege folgende Secrets an:
+| Secret | Beschreibung |
+|---|---|
+| `VIERLANDE_EMAIL` | E-Mail für vierlande-food.de |
+| `VIERLANDE_PASSWORD` | Passwort für vierlande-food.de |
+| `FRISCHFROST_EMAIL` | E-Mail für frisch-frost.de |
+| `FRISCHFROST_PASSWORD` | Passwort für frisch-frost.de |
 
-| Name            | Wert                        |
-|-----------------|-----------------------------|
-| `SHOP_EMAIL`    | Deine Shop-E-Mail-Adresse   |
-| `SHOP_PASSWORD` | Dein Shop-Passwort          |
+`GITHUB_TOKEN` ist automatisch vorhanden – kein eigenes Secret nötig.
 
-> Die Zugangsdaten werden ausschließlich als verschlüsselte GitHub Secrets gespeichert und niemals im Code oder in Logs angezeigt.
+### 3. Label anlegen
 
-### 3. Workflow aktivieren
+**Issues → Labels → New label**
 
-1. Navigiere im Repository zu **Actions**.
-2. Falls GitHub Actions noch nicht aktiv ist, klicke auf **"I understand my workflows, go ahead and enable them"**.
-3. Der Workflow `Shop Login Monitor` läuft automatisch alle 15 Minuten (Cron: `*/15 * * * *`).
-4. Zum manuellen Testen: **Actions → Shop Login Monitor → Run workflow**.
+- Name: `shop-monitor`, Farbe: `#e11d48`
+- Das Label `bug` muss ebenfalls vorhanden sein (standardmäßig vorhanden)
 
----
+### 4. Workflow aktivieren
 
-## Funktionsweise
+**Actions → "I understand my workflows, go ahead and enable them"**
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  GitHub Actions (alle 15 min)                                   │
-│                                                                 │
-│  1. GET  /account/login   → CSRF-Token + Formularfelder lesen   │
-│  2. POST /account/login   → Credentials absenden               │
-│  3. GET  /account         → Erreichbarkeit nach Login prüfen   │
-│                                                                 │
-│  Erfolg → Log + Artefakt; offene Issues werden geschlossen      │
-│  Fehler → Log + Artefakt + GitHub Issue erstellt               │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Log-Format (`shop_monitor.log`)
-
-```
-2026-05-20T10:00:01Z INFO Starting login check for https://...
-2026-05-20T10:00:03Z INFO timestamp=... status=SUCCESS http_code=200 message=Login successful – account page accessible.
-```
-
-### Artefakte
-
-Jede Ausführung speichert `shop_monitor.log` als GitHub-Artefakt mit einer Aufbewahrungsdauer von **30 Tagen** unter:  
-**Actions → [Workflow-Run] → Artifacts → shop-monitor-log-\<run-id\>**
+Zum manuellen Test: **Actions → Shop Login Monitor → Run workflow**
 
 ---
 
-## Lokale Ausführung (zum Testen)
+## Dateistruktur
+
+```
+monitors/
+├── base_monitor.py          # Basisklasse mit Login-Logik und GitHub-API
+├── vierlande_monitor.py     # CHARISMA-Monitor
+└── frischfrost_monitor.py   # FRISCH+FROST-Monitor
+run_all.py                   # Startet alle Monitore, gibt Zusammenfassung aus
+.github/workflows/monitor.yml
+requirements.txt
+```
+
+## Beispiel-Ausgabe
+
+```
+================================
+   MONITORING ZUSAMMENFASSUNG
+================================
+✅ CHARISMA           – OK
+🔴 FRISCH+FROST       – FEHLER
+================================
+```
+
+## Neuen Monitor hinzufügen
+
+1. Neue Datei `monitors/meinshop_monitor.py` anlegen, `BaseMonitor` erben
+2. `name`, `login_url`, `success_path`, `log_file` setzen
+3. `email` und `password` aus Env-Variablen in `__init__` lesen
+4. Klasse in `run_all.py` in die `MONITORS`-Liste eintragen
+5. Secrets in GitHub hinterlegen
+
+## Lokale Ausführung
 
 ```bash
 pip install -r requirements.txt
 
-export SHOP_EMAIL="deine@email.de"
-export SHOP_PASSWORD="deinspasswort"
+export VIERLANDE_EMAIL="..." VIERLANDE_PASSWORD="..."
+export FRISCHFROST_EMAIL="..." FRISCHFROST_PASSWORD="..."
+export GITHUB_TOKEN="..."   # optional, für Issue-Erstellung
 
-python monitor.py
-echo "Exit-Code: $?"
-cat shop_monitor.log
+python run_all.py
 ```
-
----
-
-## Issue-Labels
-
-Der Workflow verwendet das Label `shop-monitor`. Lege es einmalig an:
-
-**Issues → Labels → New label** → Name: `shop-monitor`, Farbe: `#e11d48`
-
-Das Label `bug` muss standardmäßig bereits vorhanden sein.

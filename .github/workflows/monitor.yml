@@ -2,20 +2,18 @@ name: Shop Login Monitor
 
 on:
   schedule:
-    # Every 15 minutes
     - cron: "*/15 * * * *"
-  # Allow manual trigger for testing
   workflow_dispatch:
 
 jobs:
   monitor:
-    name: Check Shop Login
+    name: Check Shop Logins
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     permissions:
-      contents: read   # needed for actions/checkout
-      issues: write    # needed to create GitHub Issues on failure
+      contents: read
+      issues: write
 
     steps:
       - name: Checkout repository
@@ -30,106 +28,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run login monitor
-        id: monitor
-        env:
-          SHOP_EMAIL: ${{ secrets.SHOP_EMAIL }}
-          SHOP_PASSWORD: ${{ secrets.SHOP_PASSWORD }}
-        # "continue-on-error" so subsequent steps still run even on exit code 1
+      - name: Run all monitors
         continue-on-error: true
-        run: python monitor.py
+        env:
+          VIERLANDE_EMAIL: ${{ secrets.VIERLANDE_EMAIL }}
+          VIERLANDE_PASSWORD: ${{ secrets.VIERLANDE_PASSWORD }}
+          FRISCHFROST_EMAIL: ${{ secrets.FRISCHFROST_EMAIL }}
+          FRISCHFROST_PASSWORD: ${{ secrets.FRISCHFROST_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python run_all.py
 
-      - name: Upload log as artifact
+      - name: Upload log files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: shop-monitor-log-${{ github.run_id }}
-          path: shop_monitor.log
+          name: monitor-logs-${{ github.run_id }}
+          path: logs/
           retention-days: 30
-
-      - name: Create GitHub Issue on failure
-        if: steps.monitor.outcome == 'failure'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const timestamp = new Date().toISOString();
-
-            let logContent = '';
-            try {
-              logContent = fs.readFileSync('shop_monitor.log', 'utf8');
-            } catch (e) {
-              logContent = '(Log file not found)';
-            }
-
-            const title = `🚨 Shop Login fehlgeschlagen – ${timestamp}`;
-            const body = [
-              `## Shop-Login-Monitoring: Fehler erkannt`,
-              ``,
-              `**Zeitpunkt:** ${timestamp}`,
-              `**Workflow-Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
-              ``,
-              `### Log-Ausgabe`,
-              `\`\`\``,
-              logContent.trim(),
-              `\`\`\``,
-              ``,
-              `> Dieses Issue wurde automatisch vom Shop-Login-Monitor erstellt.`,
-            ].join('\n');
-
-            // Avoid duplicate open issues for the same failure window
-            const { data: openIssues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'shop-monitor',
-            });
-
-            const alreadyOpen = openIssues.some(i =>
-              i.title.startsWith('🚨 Shop Login fehlgeschlagen')
-            );
-
-            if (!alreadyOpen) {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body,
-                labels: ['shop-monitor', 'bug'],
-              });
-              core.info('Issue created.');
-            } else {
-              core.info('Duplicate suppressed – an open issue already exists.');
-            }
-
-      - name: Close resolved issues on success
-        if: steps.monitor.outcome == 'success'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: openIssues } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              labels: 'shop-monitor',
-            });
-
-            for (const issue of openIssues) {
-              if (issue.title.startsWith('🚨 Shop Login fehlgeschlagen')) {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  body: `✅ Login erfolgreich – Problem automatisch behoben (Run [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})).`,
-                });
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed',
-                });
-                core.info(`Issue #${issue.number} closed.`);
-              }
-            }
