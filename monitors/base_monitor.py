@@ -15,7 +15,7 @@ class BaseMonitor:
     password_field: str = "password"
     log_file: str = ""
 
-    GITHUB_REPO = "MusliMusli/monitoring"
+    GITHUB_REPO = "krolinus/monitoring"
     GITHUB_API = "https://api.github.com"
     TIMEOUT = 30
     HEADERS = {

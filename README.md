@@ -17,7 +17,7 @@ Alle 15 Minuten werden beide Shops geprüft. Bei einem Fehler wird automatisch e
 ### 1. Repository anlegen
 
 ```bash
-git clone https://github.com/MusliMusli/monitoring.git
+git clone https://github.com/krolinus/monitoring.git
 cd monitoring
 ```
 
