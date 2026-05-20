@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/monitor.yml"
+
+concurrency:
+  group: monitoring
+  cancel-in-progress: false
 
 jobs:
   monitor:
