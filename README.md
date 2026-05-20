@@ -8,7 +8,7 @@ Alle 15 Minuten werden beide Shops geprüft. Bei einem Fehler wird automatisch e
 | Name | URL | Erfolgs-Ziel |
 |---|---|---|
 | CHARISMA | vierlande-food.de/account/login | /b2bsalesrepresentative |
-| FRISCH+FROST | frisch-frost.de/account/login | beliebige Weiterleitung |
+| FRISCH+FROST | frisch-frost.de/account/login | /b2bsalesrepresentative |
 
 ---
 
