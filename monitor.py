@@ -16,8 +16,15 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xhtml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
 }
 
 TIMEOUT = 30
@@ -29,7 +36,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%SZ",
 )
 log = logging.getLogger(__name__)
-# Mirror output to stdout so GitHub Actions captures it live.
 log.addHandler(logging.StreamHandler(sys.stdout))
 
 
@@ -41,11 +47,13 @@ def get_env(name: str) -> str:
 
 
 def extract_form_fields(html: str) -> dict:
-    """Return all hidden/known form fields from the login form."""
     soup = BeautifulSoup(html, "html.parser")
+
+    # Try to find the customer login form specifically
     form = soup.find("form", {"action": lambda v: v and "login" in v})
     if form is None:
-        # Fall back: first form on the page
+        form = soup.find("form", {"id": lambda v: v and "login" in v.lower()})
+    if form is None:
         form = soup.find("form")
     if form is None:
         raise ValueError("No login form found on login page.")
@@ -56,24 +64,46 @@ def extract_form_fields(html: str) -> dict:
         value = inp.get("value", "")
         if name:
             fields[name] = value
+
+    log.info("Form fields found: %s", list(fields.keys()))
     return fields
 
 
+def extract_shopify_error(html: str) -> str:
+    """Try several Shopify theme patterns to extract the login error message."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Common Shopify error selectors across themes
+    selectors = [
+        {"class_": lambda c: c and "errors" in c},
+        {"class_": lambda c: c and "error" in c.lower()},
+        {"class_": lambda c: c and "alert" in c.lower()},
+        {"class_": lambda c: c and "notice" in c.lower()},
+        {"id": lambda v: v and "error" in v.lower()},
+    ]
+    for sel in selectors:
+        el = soup.find(attrs=sel)
+        if el:
+            text = el.get_text(" ", strip=True)
+            if text:
+                return text
+
+    return "Login page still shown after POST (no error element found)."
+
+
 def login(email: str, password: str) -> tuple[bool, int, str]:
-    """
-    Attempt login and return (success, http_status_code, message).
-    Uses a Session so cookies are carried across redirects automatically.
-    """
     session = requests.Session()
     session.headers.update(HEADERS)
 
-    # ── Step 1: GET the login page and collect form fields ──────────────────
+    # ── Step 1: GET login page ────────────────────────────────────────────────
     try:
         get_resp = session.get(LOGIN_URL, timeout=TIMEOUT)
     except requests.exceptions.Timeout:
         return False, 0, "Timeout while loading login page."
     except requests.exceptions.ConnectionError as exc:
         return False, 0, f"Network error while loading login page: {exc}"
+
+    log.info("GET %s → %s (final URL: %s)", LOGIN_URL, get_resp.status_code, get_resp.url)
 
     if get_resp.status_code != 200:
         return (
@@ -87,15 +117,21 @@ def login(email: str, password: str) -> tuple[bool, int, str]:
     except ValueError as exc:
         return False, get_resp.status_code, str(exc)
 
-    # Inject credentials into the form payload.
     form_fields["customer[email]"] = email
     form_fields["customer[password]"] = password
 
-    # ── Step 2: POST credentials ─────────────────────────────────────────────
+    # ── Step 2: POST credentials ──────────────────────────────────────────────
+    post_headers = {
+        "Referer": LOGIN_URL,
+        "Origin": "https://www.vierlande-food.de",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+
     try:
         post_resp = session.post(
             LOGIN_URL,
             data=form_fields,
+            headers=post_headers,
             timeout=TIMEOUT,
             allow_redirects=True,
         )
@@ -104,24 +140,23 @@ def login(email: str, password: str) -> tuple[bool, int, str]:
     except requests.exceptions.ConnectionError as exc:
         return False, 0, f"Network error while submitting login form: {exc}"
 
-    # ── Step 3: Evaluate result ───────────────────────────────────────────────
     final_url = post_resp.url
+    log.info("POST %s → %s (final URL: %s)", LOGIN_URL, post_resp.status_code, final_url)
 
-    # Shopify redirects to /account on success; failed logins stay on /login.
+    # ── Step 3: Evaluate result ───────────────────────────────────────────────
+    # Shopify redirects to /account on success; stays on /login on failure.
     if "login" in final_url:
-        soup = BeautifulSoup(post_resp.text, "html.parser")
-        error_el = soup.find(class_=lambda c: c and "error" in c.lower())
-        error_msg = error_el.get_text(strip=True) if error_el else "Login page still shown after POST."
-        return False, post_resp.status_code, error_msg
+        error_msg = extract_shopify_error(post_resp.text)
+        return False, post_resp.status_code, f"Still on login page. Shopify message: {error_msg}"
 
-    # Optional extra check: confirm the account page is reachable with our session.
+    # Confirm the account page is reachable with the session cookie.
     try:
         acct_resp = session.get(ACCOUNT_URL, timeout=TIMEOUT)
+        log.info("GET %s → %s (final URL: %s)", ACCOUNT_URL, acct_resp.status_code, acct_resp.url)
         if acct_resp.status_code == 200 and "login" not in acct_resp.url:
             return True, acct_resp.status_code, "Login successful – account page accessible."
-        return False, acct_resp.status_code, "Redirected away from account page after login."
+        return False, acct_resp.status_code, f"Unexpected redirect after login: {acct_resp.url}"
     except requests.exceptions.RequestException as exc:
-        # POST succeeded but account check failed; treat as partial success.
         return True, post_resp.status_code, f"Login POST ok, account check failed: {exc}"
 
 
