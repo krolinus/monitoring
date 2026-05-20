@@ -3,7 +3,7 @@ from monitors.base_monitor import BaseMonitor
 
 
 class FrischFrostMonitor(BaseMonitor):
-    name = "FRISCH+FROST"
+    name = "SAP"
     login_url = "https://www.frisch-frost.de/account/login"
     success_path = "/b2bsalesrepresentative"
     log_file = "logs/frischfrost.log"
