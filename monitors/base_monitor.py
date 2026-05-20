@@ -196,6 +196,14 @@ class BaseMonitor:
         success, http_code, message = self.check_login()
         self.write_log(success, http_code, message)
 
+        self.last_result = {
+            "name": self.name,
+            "success": success,
+            "http_code": http_code,
+            "message": message,
+            "timestamp": timestamp,
+        }
+
         if not success:
             title = f"🔴 [{self.name}] Login fehlgeschlagen – {timestamp}"
             body = (

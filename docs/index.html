@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop Login Monitor</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --green-bg: rgba(63,185,80,.12);
+      --red: #f85149;
+      --red-bg: rgba(248,81,73,.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ── */
+    .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header p  { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+    #updated  { color: var(--muted); font-size: 0.75rem; white-space: nowrap; padding-top: 4px; }
+
+    /* ── Status cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.1rem 1.25rem;
+    }
+    .card .label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    .card .val { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .card .sub { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+    .ok  { color: var(--green); }
+    .err { color: var(--red); }
+
+    /* ── Uptime sparkline ── */
+    .spark {
+      display: flex;
+      gap: 2px;
+      margin-top: .55rem;
+      height: 8px;
+    }
+    .spark span {
+      flex: 1;
+      border-radius: 2px;
+      background: var(--border);
+    }
+    .spark span.ok  { background: var(--green); }
+    .spark span.err { background: var(--red); }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: .6rem;
+    }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: .65rem 1rem;
+      text-align: left;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      font-weight: 600;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td { padding: .65rem 1rem; vertical-align: middle; }
+    .ts-main { font-variant-numeric: tabular-nums; }
+    .ts-rel  { color: var(--muted); font-size: .75rem; margin-top: 1px; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: .15rem .55rem;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge.ok  { background: var(--green-bg); color: var(--green); }
+    .badge.err { background: var(--red-bg);   color: var(--red);   }
+    .badge::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ── Link icon ── */
+    .run-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px; height: 20px;
+      border-radius: 4px;
+      color: var(--muted);
+      font-size: .8rem;
+      transition: color .15s, background .15s;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .run-link:hover { color: var(--text); background: var(--border); }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>Shop Login Monitor</h1>
+      <p>Automatische Überwachung · alle 15 Minuten</p>
+    </div>
+    <span id="updated"></span>
+  </header>
+
+  <div class="cards" id="cards"></div>
+
+  <p class="section-label">Letzte Runs</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Zeitpunkt</th>
+          <th id="th0"></th>
+          <th id="th1"></th>
+          <th>Gesamt</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="5" class="empty">Lade Daten…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    Daten aus <code>history.json</code> &middot;
+    Aktualisiert mit jedem Monitor-Run &middot;
+    <span id="entry-count"></span>
+  </footer>
+
+</div>
+<script>
+  const REPO = 'MusliMusli/monitoring';
+
+  function timeAgo(iso) {
+    const s = (Date.now() - new Date(iso)) / 1000;
+    if (s < 90)   return `vor ${Math.round(s)}s`;
+    if (s < 3600) return `vor ${Math.round(s/60)} Min`;
+    if (s < 86400) return `vor ${Math.round(s/3600)} Std`;
+    return `vor ${Math.round(s/86400)} Tagen`;
+  }
+
+  function fmtTime(iso) {
+    return new Date(iso).toLocaleString('de-DE', {
+      day: '2-digit', month: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function badge(ok) {
+    return `<span class="badge ${ok ? 'ok' : 'err'}">${ok ? 'OK' : 'Fehler'}</span>`;
+  }
+
+  async function load() {
+    let history;
+    try {
+      const res = await fetch('history.json?t=' + Date.now());
+      history = await res.json();
+    } catch(e) {
+      document.getElementById('tbody').innerHTML =
+        `<tr><td colspan="5" class="empty">Keine Daten gefunden – history.json fehlt noch.</td></tr>`;
+      return;
+    }
+
+    if (!history.length) return;
+
+    const latest    = history[0];
+    const monitors  = latest.results.map(r => r.name);
+    const allOkNow  = latest.results.every(r => r.success);
+
+    // Column headers
+    monitors.forEach((name, i) => {
+      const th = document.getElementById(`th${i}`);
+      if (th) th.textContent = name;
+    });
+
+    // ── Cards ──
+    const cardsEl = document.getElementById('cards');
+    cardsEl.innerHTML = '';
+
+    // Overall status card
+    const oc = document.createElement('div');
+    oc.className = 'card';
+    oc.innerHTML = `
+      <div class="label">Aktueller Status</div>
+      <div class="val ${allOkNow ? 'ok' : 'err'}">${allOkNow ? '✅ Alles OK' : '🔴 Fehler'}</div>
+      <div class="sub">geprüft ${timeAgo(latest.timestamp)}</div>`;
+    cardsEl.appendChild(oc);
+
+    // Per-monitor uptime cards
+    monitors.forEach(name => {
+      const bits = history
+        .map(h => h.results.find(r => r.name === name))
+        .filter(Boolean);
+      const okCount  = bits.filter(r => r.success).length;
+      const pct      = bits.length ? Math.round(okCount / bits.length * 100) : 100;
+      const nowOk    = latest.results.find(r => r.name === name)?.success ?? false;
+
+      // Last 30 as sparkline
+      const spark30 = bits.slice(0, 30).reverse()
+        .map(r => `<span class="${r.success ? 'ok' : 'err'}"></span>`)
+        .join('');
+
+      const mc = document.createElement('div');
+      mc.className = 'card';
+      mc.innerHTML = `
+        <div class="label">${name}</div>
+        <div class="val ${nowOk ? 'ok' : 'err'}">${pct}%
+          <span style="font-size:.9rem;font-weight:400"> Uptime</span>
+        </div>
+        <div class="sub">${bits.length} Checks gespeichert</div>
+        <div class="spark">${spark30}</div>`;
+      cardsEl.appendChild(mc);
+    });
+
+    // ── Table ──
+    const rows = history.slice(0, 50).map(entry => {
+      const allOk = entry.results.every(r => r.success);
+      const monCells = entry.results
+        .map(r => `<td>${badge(r.success)}</td>`)
+        .join('');
+      const linkCell = entry.run_id && entry.run_id !== 'local'
+        ? `<a class="run-link" href="https://github.com/${REPO}/actions/runs/${entry.run_id}" target="_blank" title="Run öffnen">↗</a>`
+        : '';
+      return `<tr>
+        <td>
+          <div class="ts-main">${fmtTime(entry.timestamp)}</div>
+          <div class="ts-rel">${timeAgo(entry.timestamp)}</div>
+        </td>
+        ${monCells}
+        <td>${badge(allOk)}</td>
+        <td>${linkCell}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('tbody').innerHTML = rows || `<tr><td colspan="5" class="empty">Noch keine Einträge.</td></tr>`;
+    document.getElementById('entry-count').textContent = `${history.length} Einträge`;
+    document.getElementById('updated').textContent = `Geladen: ${new Date().toLocaleTimeString('de-DE')}`;
+  }
+
+  load();
+  setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>
