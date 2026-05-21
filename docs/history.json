@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-05-21T16:00:55Z",
+    "run_id": "26237542508",
+    "results": [
+      {
+        "name": "CHA",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
+        "timestamp": "2026-05-21T16:00:44Z"
+      },
+      {
+        "name": "SAP",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
+        "timestamp": "2026-05-21T16:00:49Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-05-21T15:45:33Z",
     "run_id": "26236699453",
     "results": [
