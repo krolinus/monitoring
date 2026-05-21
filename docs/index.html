@@ -148,6 +148,27 @@
 
     .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
 
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+    .pg-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: .8rem;
+      padding: .35rem .75rem;
+      transition: background .1s;
+    }
+    .pg-btn:hover:not(:disabled) { background: var(--surface2); }
+    .pg-btn:disabled { color: var(--muted); cursor: default; }
+    .pg-info { font-size: .8rem; color: var(--muted); }
+
     footer {
       margin-top: 3rem;
       text-align: center;
@@ -186,6 +207,7 @@
       </tbody>
     </table>
   </div>
+  <div class="pagination" id="pagination"></div>
 
   <footer>
     Daten aus <code>history.json</code> &middot;
@@ -196,11 +218,15 @@
 </div>
 <script>
   const REPO = 'krolinus/monitoring';
+  const MAX_RUNS  = 96;
+  const PAGE_SIZE = 25;
+  let tableData   = [];
+  let currentPage = 0;
 
   function timeAgo(iso) {
     const s = (Date.now() - new Date(iso)) / 1000;
-    if (s < 90)   return `vor ${Math.round(s)}s`;
-    if (s < 3600) return `vor ${Math.round(s/60)} Min`;
+    if (s < 90)    return `vor ${Math.round(s)}s`;
+    if (s < 3600)  return `vor ${Math.round(s/60)} Min`;
     if (s < 86400) return `vor ${Math.round(s/3600)} Std`;
     return `vor ${Math.round(s/86400)} Tagen`;
   }
@@ -216,6 +242,44 @@
     return `<span class="badge ${ok ? 'ok' : 'err'}">${ok ? 'OK' : 'Fehler'}</span>`;
   }
 
+  function renderTable() {
+    const totalPages = Math.ceil(tableData.length / PAGE_SIZE);
+    const start  = currentPage * PAGE_SIZE;
+    const slice  = tableData.slice(start, start + PAGE_SIZE);
+
+    const rows = slice.map(entry => {
+      const allOk    = entry.results.every(r => r.success);
+      const monCells = entry.results.map(r => `<td>${badge(r.success)}</td>`).join('');
+      const linkCell = entry.run_id && entry.run_id !== 'local'
+        ? `<a class="run-link" href="https://github.com/${REPO}/actions/runs/${entry.run_id}" target="_blank" title="Run öffnen">↗</a>`
+        : '';
+      return `<tr>
+        <td>
+          <div class="ts-main">${fmtTime(entry.timestamp)}</div>
+          <div class="ts-rel">${timeAgo(entry.timestamp)}</div>
+        </td>
+        ${monCells}
+        <td>${badge(allOk)}</td>
+        <td>${linkCell}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('tbody').innerHTML =
+      rows || `<tr><td colspan="5" class="empty">Noch keine Einträge.</td></tr>`;
+
+    const pg = document.getElementById('pagination');
+    if (totalPages > 1) {
+      pg.innerHTML = `
+        <button class="pg-btn" id="pg-prev" ${currentPage === 0 ? 'disabled' : ''}>← Neuer</button>
+        <span class="pg-info">Seite ${currentPage + 1} von ${totalPages} &middot; ${tableData.length} Runs (24 h)</span>
+        <button class="pg-btn" id="pg-next" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Älter →</button>`;
+      document.getElementById('pg-prev').addEventListener('click', () => { currentPage--; renderTable(); });
+      document.getElementById('pg-next').addEventListener('click', () => { currentPage++; renderTable(); });
+    } else {
+      pg.innerHTML = `<span class="pg-info">${tableData.length} Runs (24 h)</span>`;
+    }
+  }
+
   async function load() {
     let history;
     try {
@@ -229,9 +293,9 @@
 
     if (!history.length) return;
 
-    const latest    = history[0];
-    const monitors  = latest.results.map(r => r.name);
-    const allOkNow  = latest.results.every(r => r.success);
+    const latest   = history[0];
+    const monitors = latest.results.map(r => r.name);
+    const allOkNow = latest.results.every(r => r.success);
 
     monitors.forEach((name, i) => {
       const th = document.getElementById(`th${i}`);
@@ -250,12 +314,10 @@
     cardsEl.appendChild(oc);
 
     monitors.forEach(name => {
-      const bits = history
-        .map(h => h.results.find(r => r.name === name))
-        .filter(Boolean);
-      const okCount  = bits.filter(r => r.success).length;
-      const pct      = bits.length ? Math.round(okCount / bits.length * 100) : 100;
-      const nowOk    = latest.results.find(r => r.name === name)?.success ?? false;
+      const bits    = history.map(h => h.results.find(r => r.name === name)).filter(Boolean);
+      const okCount = bits.filter(r => r.success).length;
+      const pct     = bits.length ? Math.round(okCount / bits.length * 100) : 100;
+      const nowOk   = latest.results.find(r => r.name === name)?.success ?? false;
 
       const spark30 = bits.slice(0, 30).reverse()
         .map(r => `<span class="${r.success ? 'ok' : 'err'}"></span>`)
@@ -273,27 +335,11 @@
       cardsEl.appendChild(mc);
     });
 
-    const rows = history.slice(0, 50).map(entry => {
-      const allOk = entry.results.every(r => r.success);
-      const monCells = entry.results
-        .map(r => `<td>${badge(r.success)}</td>`)
-        .join('');
-      const linkCell = entry.run_id && entry.run_id !== 'local'
-        ? `<a class="run-link" href="https://github.com/${REPO}/actions/runs/${entry.run_id}" target="_blank" title="Run öffnen">↗</a>`
-        : '';
-      return `<tr>
-        <td>
-          <div class="ts-main">${fmtTime(entry.timestamp)}</div>
-          <div class="ts-rel">${timeAgo(entry.timestamp)}</div>
-        </td>
-        ${monCells}
-        <td>${badge(allOk)}</td>
-        <td>${linkCell}</td>
-      </tr>`;
-    }).join('');
+    tableData   = history.slice(0, MAX_RUNS);
+    currentPage = 0;
+    renderTable();
 
-    document.getElementById('tbody').innerHTML = rows || `<tr><td colspan="5" class="empty">Noch keine Einträge.</td></tr>`;
-    document.getElementById('entry-count').textContent = `${history.length} Einträge`;
+    document.getElementById('entry-count').textContent = `${history.length} Einträge gesamt`;
     document.getElementById('updated').textContent = `Geladen: ${new Date().toLocaleTimeString('de-DE')}`;
   }
 
