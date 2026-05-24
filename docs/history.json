@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-05-24T08:01:09Z",
+    "run_id": "26355792305",
+    "results": [
+      {
+        "name": "CHA",
+        "success": false,
+        "http_code": 0,
+        "message": "Timeout beim Absenden des Login-Formulars.",
+        "timestamp": "2026-05-24T08:00:33Z"
+      },
+      {
+        "name": "SAP",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
+        "timestamp": "2026-05-24T08:01:05Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-05-24T07:45:56Z",
     "run_id": "26355491835",
     "results": [
@@ -1976,26 +1996,6 @@
         "http_code": 200,
         "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
         "timestamp": "2026-05-23T06:15:22Z"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-05-23T06:00:42Z",
-    "run_id": "26325235718",
-    "results": [
-      {
-        "name": "CHA",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
-        "timestamp": "2026-05-23T06:00:32Z"
-      },
-      {
-        "name": "SAP",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
-        "timestamp": "2026-05-23T06:00:37Z"
       }
     ]
   }
