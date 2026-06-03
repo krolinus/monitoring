@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-06-03T05:45:28Z",
+    "run_id": "26866186704",
+    "results": [
+      {
+        "name": "CHA",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
+        "timestamp": "2026-06-03T05:45:20Z"
+      },
+      {
+        "name": "SAP",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
+        "timestamp": "2026-06-03T05:45:24Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-06-03T05:30:36Z",
     "run_id": "26865682172",
     "results": [
@@ -1976,26 +1996,6 @@
         "http_code": 200,
         "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
         "timestamp": "2026-06-02T05:00:37Z"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-06-02T04:45:34Z",
-    "run_id": "26798955196",
-    "results": [
-      {
-        "name": "CHA",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
-        "timestamp": "2026-06-02T04:45:24Z"
-      },
-      {
-        "name": "SAP",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
-        "timestamp": "2026-06-02T04:45:29Z"
       }
     ]
   }
