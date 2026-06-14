@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-06-14T22:01:12Z",
+    "run_id": "27513366449",
+    "results": [
+      {
+        "name": "CHA",
+        "success": false,
+        "http_code": 404,
+        "message": "HTTP 404 beim POST.",
+        "timestamp": "2026-06-14T22:00:36Z"
+      },
+      {
+        "name": "SAP",
+        "success": false,
+        "http_code": 200,
+        "message": "Unerwarteter Redirect: https://www.frisch-frost.de/account",
+        "timestamp": "2026-06-14T22:01:00Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-06-14T21:45:34Z",
     "run_id": "27513002552",
     "results": [
@@ -1976,26 +1996,6 @@
         "http_code": 200,
         "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
         "timestamp": "2026-06-13T21:15:56Z"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-06-13T21:01:10Z",
-    "run_id": "27478973449",
-    "results": [
-      {
-        "name": "CHA",
-        "success": false,
-        "http_code": 0,
-        "message": "Timeout beim Absenden des Login-Formulars.",
-        "timestamp": "2026-06-13T21:00:34Z"
-      },
-      {
-        "name": "SAP",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
-        "timestamp": "2026-06-13T21:01:06Z"
       }
     ]
   }
