@@ -1,6 +1,10 @@
 name: Shop Login Monitor
 
 on:
+  schedule:
+    # Every 15 minutes (times are UTC). Offset off the :00/:15/:30/:45 marks
+    # to reduce the chance GitHub delays or drops the run under peak load.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
   push:
     branches:
