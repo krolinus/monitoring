@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-08-13T03:30:36Z",
+    "run_id": "31664120538",
+    "results": [
+      {
+        "name": "CHA",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
+        "timestamp": "2026-08-13T03:30:29Z"
+      },
+      {
+        "name": "SAP",
+        "success": true,
+        "http_code": 200,
+        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
+        "timestamp": "2026-08-13T03:30:33Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-08-13T03:15:34Z",
     "run_id": "31663349722",
     "results": [
@@ -1976,26 +1996,6 @@
         "http_code": 0,
         "message": "HTTPSConnectionPool(host='api.github.com', port=443): Max retries exceeded with url: /repos/krolinus/monitoring/issues?state=open&labels=shop-monitor (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate (_ssl.c:1016)')))",
         "timestamp": "2026-08-12T02:45:34Z"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-08-12T02:30:45Z",
-    "run_id": "31557078956",
-    "results": [
-      {
-        "name": "CHA",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
-        "timestamp": "2026-08-12T02:30:37Z"
-      },
-      {
-        "name": "SAP",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
-        "timestamp": "2026-08-12T02:30:41Z"
       }
     ]
   }
