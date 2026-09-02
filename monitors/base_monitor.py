@@ -143,12 +143,17 @@ class BaseMonitor:
         if headers is None:
             return None
 
-        # Deduplication: search for existing open issue with identical title
+        # Deduplication: if this monitor already has an open failure issue,
+        # don't open another one. Otherwise every 15-minute run spawns a fresh
+        # issue (and a fresh email). One open issue per outage is enough – it
+        # gets closed automatically once the login works again.
         existing = self._find_open_failure_issues()
-        for issue in existing:
-            if issue["title"] == title:
-                self.log.info("Issue #%s bereits offen – kein Duplikat erstellt.", issue["number"])
-                return issue["number"]
+        if existing:
+            self.log.info(
+                "Offenes Fehler-Issue #%s existiert bereits – kein neues erstellt.",
+                existing[0]["number"],
+            )
+            return existing[0]["number"]
 
         resp = requests.post(
             f"{self.GITHUB_API}/repos/{self.GITHUB_REPO}/issues",
@@ -205,10 +210,12 @@ class BaseMonitor:
         }
 
         if not success:
-            title = f"🔴 [{self.name}] Login fehlgeschlagen – {timestamp}"
+            # Stable title (no timestamp) so the deduplication above can match
+            # an already-open issue for this monitor. The time is in the body.
+            title = f"🔴 [{self.name}] Login fehlgeschlagen"
             body = (
                 f"## {self.name} – Login-Fehler\n\n"
-                f"**Zeitpunkt:** {timestamp}  \n"
+                f"**Zuerst erkannt:** {timestamp}  \n"
                 f"**URL:** {self.login_url}  \n"
                 f"**HTTP-Code:** {http_code}  \n"
                 f"**Meldung:** {message}\n"
