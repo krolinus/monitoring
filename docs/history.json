@@ -1,5 +1,25 @@
 [
   {
+    "timestamp": "2026-09-14T12:45:47Z",
+    "run_id": "34845157998",
+    "results": [
+      {
+        "name": "CHA",
+        "success": false,
+        "http_code": 0,
+        "message": "Netzwerkfehler beim GET: HTTPSConnectionPool(host='www.vierlande-food.de', port=443): Max retries exceeded with url: /account/login (Caused by NameResolutionError(\"HTTPSConnection(host='www.vierlande-food.de', port=443): Failed to resolve 'www.vierlande-food.de' ([Errno -3] Temporary failure in name resolution)\"))",
+        "timestamp": "2026-09-14T12:45:25Z"
+      },
+      {
+        "name": "SAP",
+        "success": false,
+        "http_code": 0,
+        "message": "Netzwerkfehler beim GET: HTTPSConnectionPool(host='www.frisch-frost.de', port=443): Max retries exceeded with url: /account/login (Caused by NameResolutionError(\"HTTPSConnection(host='www.frisch-frost.de', port=443): Failed to resolve 'www.frisch-frost.de' ([Errno -3] Temporary failure in name resolution)\"))",
+        "timestamp": "2026-09-14T12:45:36Z"
+      }
+    ]
+  },
+  {
     "timestamp": "2026-09-14T12:30:47Z",
     "run_id": "34843790540",
     "results": [
@@ -1976,26 +1996,6 @@
         "http_code": 200,
         "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
         "timestamp": "2026-09-13T12:00:47Z"
-      }
-    ]
-  },
-  {
-    "timestamp": "2026-09-13T11:45:28Z",
-    "run_id": "34755252834",
-    "results": [
-      {
-        "name": "CHA",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.vierlande-food.de/b2bsalesrepresentative",
-        "timestamp": "2026-09-13T11:45:21Z"
-      },
-      {
-        "name": "SAP",
-        "success": true,
-        "http_code": 200,
-        "message": "Login erfolgreich \u2013 https://www.frisch-frost.de/b2bsalesrepresentative",
-        "timestamp": "2026-09-13T11:45:25Z"
       }
     ]
   }
